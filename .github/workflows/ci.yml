@@ -7,31 +7,64 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-security:
+  # -------------------------------------------------------------
+  # ETAPA 1: Compilación básica
+  # -------------------------------------------------------------
+  build:
+    name: 1. Compilación (.NET)
     runs-on: ubuntu-latest
-
     steps:
-    # 1. Obtener código fuente
     - name: Checkout del código
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
-    # 2. Configurar .NET
     - name: Configurar SDK de .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
 
-    # 3. SCA - Auditoría de dependencias (NuGet)
-    - name: SCA - Auditoría de paquetes NuGet
+    - name: Compilar solución
+      run: dotnet build --configuration Release
+
+  # -------------------------------------------------------------
+  # ETAPA 2: Análisis SCA (En paralelo tras compilar)
+  # -------------------------------------------------------------
+  sca-security:
+    name: 2. Análisis SCA (Dependencias)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+
+    - name: Configurar SDK de .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Auditar dependencias vulnerables
       run: dotnet list package --vulnerable || true
 
-    # 4. SAST - Instalar scanner de SonarCloud
+  # -------------------------------------------------------------
+  # ETAPA 3: Análisis SAST (En paralelo tras compilar)
+  # -------------------------------------------------------------
+  sast-sonarcloud:
+    name: 3. Análisis SAST (SonarCloud)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Configurar SDK de .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
     - name: Instalar SonarScanner
       run: dotnet tool install --global dotnet-sonarscanner
 
-    # 5. SAST - Iniciar análisis SonarCloud
     - name: SAST - Iniciar SonarCloud
       run: |
         dotnet-sonarscanner begin \
@@ -40,10 +73,8 @@ jobs:
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
           /d:sonar.host.url="https://sonarcloud.io"
 
-    # 6. Compilar proyecto
-    - name: Compilar proyecto
-      run: dotnet build --configuration Release || true
+    - name: Compilar para análisis
+      run: dotnet build --configuration Release
 
-    # 7. SAST - Finalizar y enviar a SonarCloud
     - name: SAST - Finalizar SonarCloud
       run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}" || true
