@@ -23,9 +23,9 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    # 3. SCA - Auditoría de dependencias
+    # 3. SCA - Auditoría de dependencias (NuGet)
     - name: SCA - Auditoría de paquetes NuGet
-      run: dotnet audit || true
+      run: dotnet list package --vulnerable || true
 
     # 4. SAST - Instalar scanner de SonarCloud
     - name: Instalar SonarScanner
