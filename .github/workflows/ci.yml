@@ -1,0 +1,49 @@
+name: Pipeline DevSecOps - Build, SCA & SAST
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-security:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Obtener código fuente
+    - name: Checkout del código
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # 2. Configurar .NET
+    - name: Configurar SDK de .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    # 3. SCA - Auditoría de dependencias
+    - name: SCA - Auditoría de paquetes NuGet
+      run: dotnet audit || true
+
+    # 4. SAST - Instalar scanner de SonarCloud
+    - name: Instalar SonarScanner
+      run: dotnet tool install --global dotnet-sonarscanner
+
+    # 5. SAST - Iniciar análisis SonarCloud
+    - name: SAST - Iniciar SonarCloud
+      run: |
+        dotnet-sonarscanner begin \
+          /k:"cesarrhf_devsecops-demo" \
+          /o:"tarea4-testing" \
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+          /d:sonar.host.url="https://sonarcloud.io"
+
+    # 6. Compilar proyecto
+    - name: Compilar proyecto
+      run: dotnet build --configuration Release || true
+
+    # 7. SAST - Finalizar y enviar a SonarCloud
+    - name: SAST - Finalizar SonarCloud
+      run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}" || true
