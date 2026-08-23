@@ -8,8 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Dependencia intencionalmente vulnerable para SCA (dotnet audit) -->
+    <!-- Dependencia vulnerable para SCA -->
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <!-- Librería SQL para activar el motor SAST de SonarCloud -->
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
   </ItemGroup>
 
 </Project>
