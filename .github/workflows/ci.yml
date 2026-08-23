@@ -25,8 +25,8 @@ jobs:
     - name: Compilar solución
       run: dotnet build --configuration Release
 
-  # -------------------------------------------------------------
-  # ETAPA 2: Análisis SCA (Falla si hay vulnerabilidades)
+ # -------------------------------------------------------------
+  # ETAPA 2: Análisis SCA (Falla si hay vulnerabilidades y genera Artefacto)
   # -------------------------------------------------------------
   sca-security:
     name: 2. Análisis SCA (Dependencias)
@@ -41,13 +41,23 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
+    - name: Generar reporte de dependencias
+      run: |
+        echo "==========================================" > sca-report.txt
+        echo "REPORTE DE AUDITORÍA SCA - NUGET PACKAGES" >> sca-report.txt
+        echo "==========================================" >> sca-report.txt
+        dotnet list package --vulnerable >> sca-report.txt || true
+
+    - name: Publicar Artefacto de Seguridad (SCA Report)
+      uses: actions/upload-artifact@v4
+      if: always() # Se ejecuta aunque el paso anterior falle o encuentre errores
+      with:
+        name: Reporte-Vulnerabilidades-SCA
+        path: sca-report.txt
+
     - name: Validar dependencias vulnerables
       run: |
-        echo "Buscando vulnerabilidades en paquetes NuGet..."
         REPORT=$(dotnet list package --vulnerable)
-        echo "$REPORT"
-        
-        # Evalúa si la consola detecta paquetes vulnerables
         if echo "$REPORT" | grep -i "has the following vulnerable"; then
           echo "❌ ERROR DE SEGURIDAD (SCA): Se encontraron librerías vulnerables."
           exit 1
