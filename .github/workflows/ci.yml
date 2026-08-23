@@ -98,7 +98,7 @@ jobs:
         echo "==========================================" > sast-report.txt
         echo "REPORTE DE ANÁLISIS CÓDIGO ESTÁTICO (SAST)" >> sast-report.txt
         echo "==========================================" >> sast-report.txt
-        dotnet build --configuration Release /flp:v=detailed;logfile=build-analysis.log || true
+        dotnet build --configuration Release "/flp:v=detailed;logfile=build-analysis.log" || true
         cat build-analysis.log >> sast-report.txt
 
     - name: Publicar Artefacto SAST
