@@ -4,7 +4,7 @@ namespace DevSecOpsDemo
 {
     class Program
     {
-        // SAST Alerta 1: Credencial expuesta en texto plano (Hardcoded Secret)
+        // SAST Alerta 1: Credencial expuesta en texto plano (Hardcoded Secret) test
         private const string DbPassword = "AdminPassword_2026_SuperSecret!";
         private const string ConnectionString = "Server=10.0.0.5;Database=ProdDB;User=admin;Password=" + DbPassword;
 
