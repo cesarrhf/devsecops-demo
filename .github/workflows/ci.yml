@@ -79,8 +79,8 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Restaurar dependencias (.NET)
-      run: dotnet restore
+    - name: Publicar binarios y dependencias locales
+      run: dotnet publish -c Release -o ./output
 
     - name: Crear directorio de salida
       run: mkdir -p reports
@@ -89,7 +89,7 @@ jobs:
       uses: dependency-check/Dependency-Check_Action@main
       with:
         project: 'DevSecOps-Demo'
-        path: '.'
+        path: './output'
         format: 'HTML'
         out: 'reports'
         args: '--failOnCVSS 0'
