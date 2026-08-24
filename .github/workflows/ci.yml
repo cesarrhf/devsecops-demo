@@ -84,6 +84,7 @@ jobs:
         path: '.'
         format: 'HTML'
         out: 'reports'
+        args: '--failOnCVSS 7'
 
     - name: Publicar Artefacto HTML Profundo
       uses: actions/upload-artifact@v4
