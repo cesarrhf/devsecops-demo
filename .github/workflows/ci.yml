@@ -155,6 +155,7 @@ jobs:
     name: 4. Despliegue a Desarrollo
     runs-on: ubuntu-latest
     needs: [sca-security, sca-deep-audit, sast-sonarcloud]
+    if: !cancelled() # comentar para test
     steps:
     - name: Simular Despliegue
       run: |
