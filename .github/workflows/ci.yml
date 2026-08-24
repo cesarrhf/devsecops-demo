@@ -74,6 +74,9 @@ jobs:
     - name: Checkout del código
       uses: actions/checkout@v4
 
+    - name: Crear directorio de salida
+      run: mkdir -p reports
+
     - name: Ejecutar OWASP Dependency-Check
       uses: dependency-check/Dependency-Check_Action@main
       with:
@@ -88,7 +91,8 @@ jobs:
       if: always()
       with:
         name: Reporte-SCA-OWASP-HTML
-        path: reports/dependency-check-report.html
+        path: '**/dependency-check-report.html'
+        if-no-files-found: warn
 
   # -------------------------------------------------------------
   # ETAPA 3: Análisis SAST (SonarCloud + Artefacto Local)
