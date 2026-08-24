@@ -84,16 +84,13 @@ jobs:
         path: '.'
         format: 'HTML'
         out: 'reports'
-        args: '--enableTheoretical'
 
     - name: Publicar Artefacto HTML Profundo
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: Reporte-SCA-OWASP-HTML
-        path: '**/dependency-check-report.html'
-        if-no-files-found: warn
-
+        path: reports/dependency-check-report.html
   # -------------------------------------------------------------
   # ETAPA 3: Análisis SAST (SonarCloud + Artefacto Local)
   # -------------------------------------------------------------
