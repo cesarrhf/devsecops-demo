@@ -194,15 +194,21 @@ jobs:
       - name: Esperar disponibilidad del servicio
         run: sleep 10
 
-      - name: Escaneo DAST con OWASP ZAP
+      - name: Escaneo DAST con OWASP ZAP (Modo Seguro sin Volúmenes)
         run: |
-          docker run --rm --network zap-net \
-            -v ${{ github.workspace }}:/zap/wrk/:rw \
+          # 1. Creamos el contenedor sin montar directorios externos conflictivos
+          docker create --name zap-scanner --network zap-net \
             ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py \
-            -t http://webapp-${{ github.sha }}:8080/ \
-            -r zap_report.html \
-            -I || true
+            zap-baseline.py -t http://webapp-${{ github.sha }}:8080/ -r zap_report.html -I
+
+          # 2. Ejecutamos el escaneo
+          docker start -a zap-scanner || true
+
+          # 3. Extraemos el reporte directamente desde el contenedor hacia la raíz del workspace
+          docker cp zap-scanner:/zap/wrk/zap_report.html ./zap_report.html || true
+
+          # 4. Eliminamos el contenedor de ZAP
+          docker rm zap-scanner || true
 
       - name: Limpiar contenedor webapp tras análisis
         if: always()
