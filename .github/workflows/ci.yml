@@ -201,10 +201,7 @@ jobs:
             -u $(id -u):$(id -g) \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py -t http://webapp-${{ github.sha }}:8080/ \
-            -J report_json.json -w report_md.md -r report_html.html -I || true
-
-      - name: Verificar archivos generados
-        run: ls -la ${{ github.workspace }}
+            -r zap_report.html -I || true
 
       - name: Limpiar contenedor webapp tras análisis
         if: always()
@@ -217,10 +214,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Reporte-OWASP-ZAP
-          path: |
-            report_json.json
-            report_md.md
-            report_html.html
+          path: zap_report.html
   # -------------------------------------------------------------
   # ETAPA 7: Despliegue Final
   # -------------------------------------------------------------
