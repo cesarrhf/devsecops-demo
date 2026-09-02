@@ -214,9 +214,9 @@ jobs:
         with:
           name: Reporte-OWASP-ZAP
           path: |
-            report_json.json
-            report_md.md
-            report_html.html
+            ${{ github.workspace }}/report_json.json
+            ${{ github.workspace }}/report_md.md
+            ${{ github.workspace }}/report_html.html
   # -------------------------------------------------------------
   # ETAPA 7: Despliegue Final
   # -------------------------------------------------------------
