@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# Variable global para el nombre de la imagen en Docker Hub
+# Variable global para el nombre de la imagen en Docker Hub test
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKER_USER }}/devsecops-demo
 
