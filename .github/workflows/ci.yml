@@ -198,9 +198,13 @@ jobs:
         run: |
           docker run --rm --network zap-net \
             -v ${{ github.workspace }}:/zap/wrk/:rw \
+            -u $(id -u):$(id -g) \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py -t http://webapp-${{ github.sha }}:8080/ \
             -J report_json.json -w report_md.md -r report_html.html -I || true
+
+      - name: Verificar archivos generados
+        run: ls -la ${{ github.workspace }}
 
       - name: Limpiar contenedor webapp tras análisis
         if: always()
@@ -214,9 +218,9 @@ jobs:
         with:
           name: Reporte-OWASP-ZAP
           path: |
-            ${{ github.workspace }}/report_json.json
-            ${{ github.workspace }}/report_md.md
-            ${{ github.workspace }}/report_html.html
+            report_json.json
+            report_md.md
+            report_html.html
   # -------------------------------------------------------------
   # ETAPA 7: Despliegue Final
   # -------------------------------------------------------------
