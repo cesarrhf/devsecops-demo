@@ -198,10 +198,11 @@ jobs:
         run: |
           docker run --rm --network zap-net \
             -v ${{ github.workspace }}:/zap/wrk/:rw \
-            -u $(id -u):$(id -g) \
             ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py -t http://webapp-${{ github.sha }}:8080/ \
-            -r zap_report.html -I || true
+            zap-baseline.py \
+            -t http://webapp-${{ github.sha }}:8080/ \
+            -r zap_report.html \
+            -I || true
 
       - name: Limpiar contenedor webapp tras análisis
         if: always()
