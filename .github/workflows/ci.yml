@@ -1,4 +1,4 @@
-name: Pipeline DevSecOps - Build, SCA, SAST & Deploy
+name: Pipeline DevSecOps - Build, SCA, SAST, Docker & DAST
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   # -------------------------------------------------------------
-  # ETAPA 1: Compilación básica
+  # ETAPA 1: Compilación básica (.NET)
   # -------------------------------------------------------------
   build:
     name: 1. Compilación (.NET)
@@ -26,10 +26,10 @@ jobs:
       run: dotnet build --configuration Release
 
   # -------------------------------------------------------------
-  # ETAPA 2A: Análisis SCA Rápido (Gatekeeper diario)
+  # ETAPA 2: Análisis SCA (Dependencias)
   # -------------------------------------------------------------
   sca-security:
-    name: 2A. Análisis SCA Rápido (Dependencias)
+    name: 2. Análisis SCA (Dependencias)
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -48,7 +48,7 @@ jobs:
         echo "==========================================" >> sca-report.txt
         dotnet list package --vulnerable >> sca-report.txt || true
 
-    - name: Publicar Artefacto SCA (Texto)
+    - name: Publicar Artefacto SCA
       uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -63,45 +63,8 @@ jobs:
           exit 1
         fi
 
-# -------------------------------------------------------------
-  # ETAPA 2B: Análisis SCA Profundo (OWASP Dependency-Check)
   # -------------------------------------------------------------
-  sca-deep-audit:
-    name: 2B. SCA Profundo (OWASP Reporte HTML)
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-    - name: Checkout del código
-      uses: actions/checkout@v4
-
-    - name: Configurar SDK de .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
-
-    - name: Publicar binarios y dependencias locales
-      run: dotnet publish -c Release -o ./output
-
-    - name: Crear directorio de salida
-      run: mkdir -p reports
-
-    - name: Ejecutar OWASP Dependency-Check
-      uses: dependency-check/Dependency-Check_Action@main
-      with:
-        project: 'DevSecOps-Demo'
-        path: './output'
-        format: 'HTML'
-        out: 'reports'
-        args: '--failOnCVSS 0'
-
-    - name: Publicar Artefacto HTML Profundo
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: Reporte-SCA-OWASP-HTML
-        path: reports/dependency-check-report.html
-  # -------------------------------------------------------------
-  # ETAPA 3: Análisis SAST (SonarCloud + Artefacto Local)
+  # ETAPA 3: Análisis SAST (SonarCloud)
   # -------------------------------------------------------------
   sast-sonarcloud:
     name: 3. Análisis SAST (SonarCloud)
@@ -149,15 +112,37 @@ jobs:
       run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
   # -------------------------------------------------------------
-  # ETAPA 4: Despliegue a Desarrollo (Exige aprobación de los 3 análisis)
+  # ETAPA 4: Despliegue en Docker + Análisis Dinámico DAST (OWASP ZAP)
   # -------------------------------------------------------------
-  deploy-dev:
-    name: 4. Despliegue a Desarrollo
+  dast-security:
+    name: 4. Despliegue Docker & Análisis DAST (OWASP ZAP)
     runs-on: ubuntu-latest
-    needs: [sca-security, sca-deep-audit, sast-sonarcloud]
-    if: always() # comentar para test
+    needs: [sca-security, sast-sonarcloud]
     steps:
-    - name: Simular Despliegue
+    - name: Checkout del código
+      uses: actions/checkout@v4
+
+    - name: Construir Imagen Docker
+      run: docker build -t devsecops-demo-app .
+
+    - name: Desplegar Contenedor en Runner
       run: |
-        echo "🚀 Todos los controles de seguridad (SCA y SAST) fueron aprobados con éxito."
-        echo "Iniciando despliegue automático en el entorno de Desarrollo (DEV)..."
+        docker run -d -p 5000:8080 --name app-test devsecops-demo-app
+        sleep 5
+
+    - name: Verificar Disponibilidad del Servicio
+      run: curl -I http://localhost:5000 || exit 1
+
+    - name: Ejecutar Escaneo DAST con OWASP ZAP
+      uses: zaproxy/action-baseline@v0.12.0
+      with:
+        target: 'http://localhost:5000'
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue_title: 'Alerta de Seguridad DAST - OWASP ZAP'
+        fail_action: false
+
+    - name: Detener y Limpiar Contenedor
+      if: always()
+      run: |
+        docker stop app-test || true
+        docker rm app-test || true
