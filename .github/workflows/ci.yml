@@ -143,7 +143,7 @@ jobs:
           docker push ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
           docker push ${{ env.DOCKER_IMAGE }}:latest
 
-  # -------------------------------------------------------------
+# -------------------------------------------------------------
   # ETAPA 5: Image Security Scan (Trivy)
   # -------------------------------------------------------------
   ImageSecurity:
@@ -151,16 +151,24 @@ jobs:
     needs: DockerBuild
     runs-on: ubuntu-latest
     steps:
-      - name: Escanear imagen con Trivy
+      - name: Escanear imagen con Trivy y exportar reporte
         uses: aquasecurity/trivy-action@master
-        continue-on-error: true # No bloquea el pipeline si encuentra vulnerabilidades en la imagen
+        continue-on-error: true
         with:
           image-ref: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
-          format: 'table'
+          format: 'json' # Cambiamos a json para poder guardarlo y leerlo fácilmente
+          output: 'trivy-report.json'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
+      - name: Publicar Artefacto Trivy
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reporte-Seguridad-Trivy
+          path: trivy-report.json
 
   # -------------------------------------------------------------
   # ETAPA 6: Análisis DAST (OWASP ZAP)
@@ -206,10 +214,9 @@ jobs:
         with:
           name: Reporte-OWASP-ZAP
           path: |
-            ${{ github.workspace }}/report_json.json
-            ${{ github.workspace }}/report_md.md
-            ${{ github.workspace }}/report_html.html
-
+            report_json.json
+            report_md.md
+            report_html.html
   # -------------------------------------------------------------
   # ETAPA 7: Despliegue Final
   # -------------------------------------------------------------
