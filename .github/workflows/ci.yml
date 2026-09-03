@@ -30,7 +30,7 @@ jobs:
         run: dotnet build --configuration Release
 
   # -------------------------------------------------------------
-  # ETAPA 2: Análisis SCA (Dependencias)
+  # ETAPA 2: Análisis SCA (DependenciasSSS)
   # -------------------------------------------------------------
   sca-security:
     name: 2. Análisis SCA (Dependencias)
